@@ -7,8 +7,8 @@ PACKAGE=gnome_plugin
 dnl plugin version
 MAJOR_VERSION=0
 MINOR_VERSION=0
-MICRO_VERSION=0
-EXTRA_VERSION=1
+MICRO_VERSION=2
+EXTRA_VERSION=0
 
 if test \( $EXTRA_VERSION -eq 0 \); then
     if test \( $MICRO_VERSION -eq 0 \); then
@@ -76,7 +76,7 @@ AC_SUBST(CLAWS_MAIL_PLUGINDIR)
 
 dnl Check for GLib
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6 gmodule-2.0 >= 2.6 gobject-2.0 >= 2.6 gthread-2.0 >= 2.6)
-      
+
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 
@@ -87,7 +87,7 @@ dnl Check for GTK+
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.6)
 
 dnl for EDS support via libebook in address completion
-LIBEBOOK_REQUIRED=2.24.3
+LIBEBOOK_REQUIRED=3.6
 PKG_CHECK_MODULES(libebook, libebook-1.2 >= $LIBEBOOK_REQUIRED)
 AC_SUBST(libebook_CFLAGS)
 AC_SUBST(libebook_LIBS)

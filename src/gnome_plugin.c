@@ -16,9 +16,8 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#  include "pluginconfig.h"
 #endif
-#include "pluginconfig.h"
 
 #include "common/hooks.h"
 #include "common/plugin.h"
@@ -26,14 +25,14 @@
 #include "addr_compl.h"
 #include "common/utils.h"
 
-#include <libebook/e-book.h>
+#include <libebook/libebook.h>
 
 
 static gboolean my_address_completion_build_list_hook(gpointer, gpointer);
 
 static guint hook_address_completion;
 
-static EBook *eds_book = NULL;
+static GList *eds_books = NULL;
 static gboolean eds_waiting = FALSE;
 
 static void eds_contacts_added_cb(EBookView *view, const GList *contacts, gpointer data)
@@ -75,46 +74,71 @@ static void eds_sequence_complete_cb(EBookView *view, const GList *contacts, gpo
 
 static void add_gnome_addressbook(GList **address_list)
 {
-  EBookQuery *query;
-  EBookView *view;
+  ESourceRegistry * registry = NULL;
   GError *error = NULL;
+  GList *a;
 
-  /* create book accessor if necessary */
-  if(!eds_book) {
-    eds_book = e_book_new_default_addressbook(&error);
-    if(!eds_book) {
-      debug_print("Error: Could not get eds addressbook: %s\n", error->message);
-      g_error_free(error);
-      return;
-    }
-  }
+  registry = e_source_registry_new_sync (NULL, &error);
 
-  /* open book if necessary */
-  if(!e_book_is_opened(eds_book) && !e_book_open(eds_book, TRUE, &error)) {
-    debug_print("Error: Could not open eds addressbook: %s\n", error->message);
+  if (!registry || error) {
+    debug_print("Error: Failed to get access to source registry: %s\n", error->message);
     g_error_free(error);
     return;
   }
 
-  /* query book */
-  query = e_book_query_field_exists(E_CONTACT_EMAIL);
-  if(!e_book_get_book_view(eds_book, query, NULL, 0, &view, &error)) {
-    debug_print("Error: Could not get eds addressbook view: %s\n", error->message);
-    g_error_free(error);
+  // create book accessor if necessary
+  if(!eds_books) {
+    GList *list_sources = e_source_registry_list_sources (registry, E_SOURCE_EXTENSION_ADDRESS_BOOK);
+    for (a = list_sources; a; a = a->next) {
+      ESource *source = E_SOURCE (a->data);
+      if (e_source_get_enabled(source)) {
+        EBook *eds_book = e_book_new(source, &error);
+
+        if(!eds_book) {
+          g_list_free_full(list_sources, g_object_unref);
+          debug_print("Error: Could not get eds addressbook: %s\n", error->message);
+          g_error_free(error);
+          return;
+        }
+        eds_books = g_list_append (eds_books, eds_book);
+      }
+    }
+    g_list_free_full(list_sources, g_object_unref);
   }
-  e_book_query_unref(query);
 
-  g_signal_connect(G_OBJECT(view), "contacts-added", G_CALLBACK(eds_contacts_added_cb), address_list);
-  g_signal_connect(G_OBJECT(view), "sequence-complete", G_CALLBACK(eds_sequence_complete_cb), NULL);
+  for (a = eds_books; a; a = a->next) {
+    EBook *eds_book = a->data;
+    EBookQuery *query;
+    EBookView *view;
 
-  eds_waiting = TRUE;
-  e_book_view_start(view);
+    // open book if necessary
+    if(!e_book_is_opened(eds_book) && !e_book_open(eds_book, TRUE, &error)) {
+      debug_print("Error: Could not open eds addressbook: %s\n", error->message);
+      g_error_free(error);
+      return;
+    }
 
-  while(eds_waiting)
-    gtk_main_iteration();
+    // query book
+    query = e_book_query_field_exists(E_CONTACT_EMAIL);
+    if(!e_book_get_book_view(eds_book, query, NULL, 0, &view, &error)) {
+      debug_print("Error: Could not get eds addressbook view: %s\n", error->message);
+      g_error_free(error);
+    }
+    e_book_query_unref(query);
 
-  e_book_view_stop(view);
-  g_object_unref(view);
+    g_signal_connect(G_OBJECT(view), "contacts-added", G_CALLBACK(eds_contacts_added_cb), address_list);
+    g_signal_connect(G_OBJECT(view), "sequence-complete", G_CALLBACK(eds_sequence_complete_cb), NULL);
+
+    eds_waiting = TRUE;
+    e_book_view_start(view);
+
+    while(eds_waiting)
+      gtk_main_iteration();
+
+    e_book_view_stop(view);
+    g_object_unref(view);
+  }
+
 }
 
 static gboolean my_address_completion_build_list_hook(gpointer source, gpointer data)
@@ -148,9 +172,9 @@ gboolean plugin_done(void)
 {
   hooks_unregister_hook(ADDDRESS_COMPLETION_BUILD_ADDRESS_LIST_HOOKLIST, hook_address_completion);
 
-  if(eds_book) {
-    g_object_unref(eds_book);
-    eds_book = NULL;
+  if(eds_books) {
+    g_list_free_full(eds_books, g_object_unref);
+    eds_books = NULL;
   }
 
   /* Returning FALSE here means that g_module_close() will not be called on the plugin.
@@ -170,8 +194,7 @@ const gchar *plugin_desc(void)
   return "This plugin provides Gnome integration features.\n"
 	   "Currently, the only implemented functionality is to "
 	   "include the Gnome addressbook in Claws Mail's address "
-	   "completion.\n"
-           "\nFeedback to <berndth@gmx.de> is welcome.";
+	   "completion.\n";
 }
 
 const gchar *plugin_type(void)
