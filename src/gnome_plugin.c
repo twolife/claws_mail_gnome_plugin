@@ -26,8 +26,6 @@
 #include "addr_compl.h"
 #include "common/utils.h"
 
-#include "gettext.h"
-
 #include <libebook/e-book.h>
 
 
@@ -128,23 +126,16 @@ static gboolean my_address_completion_build_list_hook(gpointer source, gpointer 
 
 gint plugin_init(gchar **error)
 {
-#ifdef G_OS_UNIX
-	bindtextdomain(TEXTDOMAIN, LOCALEDIR);
-#else
-	bindtextdomain(TEXTDOMAIN, get_locale_dir());
-#endif
-  bind_textdomain_codeset(TEXTDOMAIN, "UTF-8");
-
   /* Version check */
   if(!check_plugin_version(MAKE_NUMERIC_VERSION(3,7,1,44),
-			   VERSION_NUMERIC, _("Gnome"), error))
+			   VERSION_NUMERIC, "Gnome", error))
     return -1;
 
   hook_address_completion = hooks_register_hook(ADDDRESS_COMPLETION_BUILD_ADDRESS_LIST_HOOKLIST,
                                                 my_address_completion_build_list_hook, NULL);
   if(hook_address_completion == (guint) -1) {
-    *error = g_strdup(_("Failed to register address completion hook in the "
-			"Gnome plugin"));
+    *error = g_strdup("Failed to register address completion hook in the "
+			"Gnome plugin");
     return -1;
   }
 
@@ -171,16 +162,16 @@ gboolean plugin_done(void)
 
 const gchar *plugin_name(void)
 {
-  return _("Gnome");
+  return "Gnome";
 }
 
 const gchar *plugin_desc(void)
 {
-  return _("This plugin provides Gnome integration features.\n"
+  return "This plugin provides Gnome integration features.\n"
 	   "Currently, the only implemented functionality is to "
 	   "include the Gnome addressbook in Claws Mail's address "
 	   "completion.\n"
-           "\nFeedback to <berndth@gmx.de> is welcome.");
+           "\nFeedback to <berndth@gmx.de> is welcome.";
 }
 
 const gchar *plugin_type(void)
@@ -201,7 +192,7 @@ const gchar *plugin_version(void)
 struct PluginFeature *plugin_provides(void)
 {
   static struct PluginFeature features[] =
-    { {PLUGIN_UTILITY, N_("Gnome integration")},
+    { {PLUGIN_UTILITY, "Gnome integration"},
       {PLUGIN_NOTHING, NULL}};
   return features;
 }

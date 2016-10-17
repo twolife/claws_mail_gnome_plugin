@@ -1,6 +1,5 @@
 AC_PREREQ(2.60)
 AC_INIT(src/gnome_plugin.c)
-AC_CONFIG_AUX_DIR(config)
 AM_MAINTAINER_MODE
 
 PACKAGE=gnome_plugin
@@ -56,13 +55,6 @@ if test $USE_MAINTAINER_MODE = yes; then
 	CFLAGS="$CFLAGS -DGTK_DISABLE_DEPRECATED -DGDK_DISABLE_DEPRECATED -DG_DISABLE_DEPRECATED"
 fi
 
-ALL_LINGUAS=""
-
-AC_DEFINE_UNQUOTED(TEXTDOMAIN, "$PACKAGE", [Gettext textdomain])
-
-AM_GNU_GETTEXT_VERSION([0.15])
-AM_GNU_GETTEXT([external])
-
 dnl Find pkg-config
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 if test x$PKG_CONFIG = xno ; then
@@ -110,7 +102,5 @@ AC_SUBST(EXTRA_VERSION)
 
 AC_OUTPUT([
 Makefile
-config/Makefile
-po/Makefile.in
 src/Makefile
 ])
