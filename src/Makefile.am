@@ -1,12 +1,12 @@
 plugindir = $(CLAWS_MAIL_PLUGINDIR)
 
-plugin_LTLIBRARIES = gnome_plugin.la
+plugin_LTLIBRARIES = gnome.la
 
-gnome_plugin_la_SOURCES = \
+gnome_la_SOURCES = \
 	gnome_plugin.c \
 	gettext.h
 
-gnome_plugin_la_LDFLAGS = \
+gnome_la_LDFLAGS = \
 	-avoid-version -module \
 	$(GTK_LIBS) \
 	$(libebook_LIBS)
