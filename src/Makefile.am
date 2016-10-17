@@ -9,6 +9,7 @@ gnome_la_SOURCES = \
 gnome_la_LDFLAGS = \
 	-avoid-version -module \
 	$(GTK_LIBS) \
+	$(LIBSECRET_LIBS) \
 	$(libebook_LIBS)
 
 INCLUDES = \
@@ -21,5 +22,6 @@ AM_CPPFLAGS = \
 	$(CLAWS_MAIL_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GTK_CFLAGS) \
+	$(LIBSECRET_CFLAGS) \
 	$(libebook_CFLAGS) \
 	-DLOCALEDIR=\""$(localedir)"\"

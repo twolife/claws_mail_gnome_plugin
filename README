@@ -1,4 +1,4 @@
-This plugin collects Gnome integration features. The only
-currently working functionality is adding the Gnome addressbook
-to the address completion.
-
+This plugin collects Gnome integration features:
+ - adding the Gnome addressbook to the address completion
+ - obtains passwords for e-mail accounts from Secret Service
+   (gnome-keyring or ksecretservice)

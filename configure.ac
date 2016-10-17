@@ -1,31 +1,23 @@
 AC_PREREQ(2.60)
-AC_INIT(src/gnome_plugin.c)
-AM_MAINTAINER_MODE
 
 PACKAGE=gnome_plugin
 
 dnl plugin version
 MAJOR_VERSION=0
-MINOR_VERSION=0
-MICRO_VERSION=2
-EXTRA_VERSION=0
+MINOR_VERSION=2
+MICRO_VERSION=0
 
-if test \( $EXTRA_VERSION -eq 0 \); then
-    if test \( $MICRO_VERSION -eq 0 \); then
-        VERSION=${MAJOR_VERSION}.${MINOR_VERSION} 
-    else
-		VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}
-    fi
+if test \( $MICRO_VERSION -eq 0 \); then
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION} 
 else
-    if test \( $MICRO_VERSION -eq 0 \); then
-        VERSION=${MAJOR_VERSION}.${MINOR_VERSION}cvs${EXTRA_VERSION}
-    else
-		VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}cvs${EXTRA_VERSION}
-    fi
+    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}
 fi
 
+AC_INIT(src/gnome_plugin.c)
+AM_MAINTAINER_MODE
+
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
-AC_CONFIG_HEADERS(pluginconfig.h)
+AC_CONFIG_HEADERS(config.h)
 AC_DEFINE_UNQUOTED(PLUGINVERSION, "$VERSION", [plugin version])
 
 AC_PROG_CC
@@ -34,21 +26,12 @@ AM_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_CPP
 AC_PROG_LIBTOOL
+AC_PROG_MKDIR_P
 
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-
-AC_MSG_CHECKING([if gcc supports -Wno-pointer-sign])
-_gcc_cflags_save=$CFLAGS
-CFLAGS="-Wno-pointer-sign"
-AC_COMPILE_IFELSE(AC_LANG_PROGRAM([]),_gcc_psign=yes,_gcc_psign=no)
-AC_MSG_RESULT($_gcc_psign)
-CFLAGS=$_gcc_cflags_save;
-if test x"$_gcc_psign" = xyes ; then
-	CFLAGS="$CFLAGS -Wno-pointer-sign"
-fi
 
 CFLAGS="$CFLAGS -Wall"
 if test $USE_MAINTAINER_MODE = yes; then
@@ -69,7 +52,7 @@ else
 fi
 
 dnl Check for claws-mail
-PKG_CHECK_MODULES(CLAWS_MAIL, claws-mail >= 3.6.1.27)
+PKG_CHECK_MODULES(CLAWS_MAIL, claws-mail >= 3.9.3)
 AC_SUBST(CLAWS_MAIL_CFLAGS)
 AC_SUBST(CLAWS_MAIL_LIBS)
 AC_SUBST(CLAWS_MAIL_PLUGINDIR)
@@ -79,26 +62,24 @@ PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6 gmodule-2.0 >= 2.6 gobject-2.0 >= 2.6 gt
 
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
-
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
 dnl Check for GTK+
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.6)
 
-dnl for EDS support via libebook in address completion
+dnl EDS support via libebook
 LIBEBOOK_REQUIRED=3.6
 PKG_CHECK_MODULES(libebook, libebook-1.2 >= $LIBEBOOK_REQUIRED)
 AC_SUBST(libebook_CFLAGS)
 AC_SUBST(libebook_LIBS)
 
+dnl libsecret, library for storing and retrieving passwords
+PKG_CHECK_MODULES([LIBSECRET], [libsecret-1])
+AC_SUBST(LIBSECRET_CFLAGS)
+AC_SUBST(LIBSECRET_LIBS)
 
-AC_SUBST(VERSION)
 AC_SUBST(PLUGINVERSION)
-AC_SUBST(MAJOR_VERSION)
-AC_SUBST(MINOR_VERSION)
-AC_SUBST(MICRO_VERSION)
-AC_SUBST(EXTRA_VERSION)
 
 AC_OUTPUT([
 Makefile

@@ -1,5 +1,7 @@
-/* Gnome plugin for Claws-Mail
- * Copyright (C) 2009 Holger Berndt
+/*
+ * Gnome plugin for Claws-Mail
+ *  Copyright (C) 2009 Holger Berndt
+ *  Copyright (C) 2012-2016 Sébastien Noel
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +18,89 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#  include "pluginconfig.h"
+#  include "config.h"
 #endif
 
-#include "common/hooks.h"
-#include "common/plugin.h"
 #include "common/version.h"
+#include "common/plugin.h"
+#include "common/hooks.h"
+#include "account.h"
 #include "addr_compl.h"
 #include "common/utils.h"
 
+#include <libsecret/secret.h>
 #include <libebook/libebook.h>
 
+static guint hook_address_completion;
+static guint hook_password;
+
+
+// LIBSECRET
+
+const SecretSchema * get_generic_schema (void)
+{
+    static const SecretSchema the_schema = {
+        "org.freedesktop.Secret.Generic", SECRET_SCHEMA_NONE,
+        {
+            {  "user", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "server", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "protocol", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  NULL, 0 },
+        }
+    };
+    return &the_schema;
+}
+#define GENERIC_SCHEMA  get_generic_schema ()
+
+static gboolean password_get_hook(gpointer source, gpointer hook_data) {
+    PasswordRequest *req = source;
+    GError* error = NULL;
+    gchar *pass;
+
+    // "full search"
+    debug_print("LIBSECRET:: user: %s, server: %s, proto: %s \n",
+                             req->user, req->server, req->protocol);
+    pass = secret_password_lookup_sync(GENERIC_SCHEMA, NULL, &error,
+            "user", req->user,
+            "server", req->server,
+            "protocol", req->protocol,
+            NULL);
+    if (pass != NULL) {
+        req->password = g_strdup(pass);
+        secret_password_free(pass);
+        return TRUE;
+    }
+    else if (error != NULL) {
+        debug_print("libsecret access failed: %s.", error->message);
+        g_error_free(error);
+        return FALSE;
+    }
+
+    // fallback
+    debug_print("LIBSECRET:: user: %s, server: %s \n",
+                             req->user, req->server);
+    pass = secret_password_lookup_sync(GENERIC_SCHEMA, NULL, &error,
+            "user", req->user,
+            "server", req->server,
+            NULL);
+    if (pass != NULL) {
+        req->password = g_strdup(pass);
+        secret_password_free(pass);
+        return TRUE;
+    }
+    else if (error != NULL) {
+        debug_print("libsecret access failed: %s.", error->message);
+        g_error_free(error);
+        return FALSE;
+    }
+
+    return FALSE;
+}
+
+
+// EDS
 
 static gboolean my_address_completion_build_list_hook(gpointer, gpointer);
-
-static guint hook_address_completion;
-
 static GList *eds_books = NULL;
 static gboolean eds_waiting = FALSE;
 
@@ -148,18 +217,26 @@ static gboolean my_address_completion_build_list_hook(gpointer source, gpointer 
 }
 
 
+// MAIN
+
 gint plugin_init(gchar **error)
 {
   /* Version check */
-  if(!check_plugin_version(MAKE_NUMERIC_VERSION(3,7,1,44),
-			   VERSION_NUMERIC, "Gnome", error))
+  if(!check_plugin_version(MAKE_NUMERIC_VERSION(3,9,3,0),
+                           VERSION_NUMERIC, "Gnome", error))
     return -1;
 
   hook_address_completion = hooks_register_hook(ADDDRESS_COMPLETION_BUILD_ADDRESS_LIST_HOOKLIST,
                                                 my_address_completion_build_list_hook, NULL);
+
   if(hook_address_completion == (guint) -1) {
-    *error = g_strdup("Failed to register address completion hook in the "
-			"Gnome plugin");
+    *error = g_strdup("Failed to register address completion hook in the Gnome plugin");
+    return -1;
+  }
+
+  hook_password = hooks_register_hook(PASSWORD_GET_HOOKLIST, &password_get_hook, NULL);
+  if(hook_password == (guint) -1) {
+    *error = g_strdup("Failed to register password hook in the Gnome plugin");
     return -1;
   }
 
@@ -170,6 +247,7 @@ gint plugin_init(gchar **error)
 
 gboolean plugin_done(void)
 {
+  hooks_unregister_hook(PASSWORD_GET_HOOKLIST, hook_password);
   hooks_unregister_hook(ADDDRESS_COMPLETION_BUILD_ADDRESS_LIST_HOOKLIST, hook_address_completion);
 
   if(eds_books) {
@@ -191,10 +269,10 @@ const gchar *plugin_name(void)
 
 const gchar *plugin_desc(void)
 {
-  return "This plugin provides Gnome integration features.\n"
-	   "Currently, the only implemented functionality is to "
-	   "include the Gnome addressbook in Claws Mail's address "
-	   "completion.\n";
+  return "This plugin provides Gnome integration features:\n"
+           " - adding the Gnome addressbook to the address completion\n"
+           " - obtains passwords for e-mail accounts from libsecret\n"
+          ;
 }
 
 const gchar *plugin_type(void)
@@ -219,3 +297,4 @@ struct PluginFeature *plugin_provides(void)
       {PLUGIN_NOTHING, NULL}};
   return features;
 }
+
