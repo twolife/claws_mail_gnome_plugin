@@ -1,24 +1,11 @@
 AC_PREREQ(2.60)
 
-PACKAGE=gnome_plugin
-
-dnl plugin version
-MAJOR_VERSION=0
-MINOR_VERSION=2
-MICRO_VERSION=0
-
-if test \( $MICRO_VERSION -eq 0 \); then
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION} 
-else
-    VERSION=${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}
-fi
-
-AC_INIT(src/gnome_plugin.c)
+AC_INIT([gnome_plugin], [0.2.0])
+AC_CONFIG_SRCDIR([src/gnome_plugin.c])
 AM_MAINTAINER_MODE
 
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS(config.h)
-AC_DEFINE_UNQUOTED(PLUGINVERSION, "$VERSION", [plugin version])
 
 AC_PROG_CC
 AC_ISC_POSIX
@@ -78,8 +65,6 @@ dnl libsecret, library for storing and retrieving passwords
 PKG_CHECK_MODULES([LIBSECRET], [libsecret-1])
 AC_SUBST(LIBSECRET_CFLAGS)
 AC_SUBST(LIBSECRET_LIBS)
-
-AC_SUBST(PLUGINVERSION)
 
 AC_OUTPUT([
 Makefile

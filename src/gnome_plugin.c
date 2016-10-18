@@ -287,7 +287,7 @@ const gchar *plugin_licence(void)
 
 const gchar *plugin_version(void)
 {
-  return PLUGINVERSION;
+  return PACKAGE_VERSION;
 }
 
 struct PluginFeature *plugin_provides(void)

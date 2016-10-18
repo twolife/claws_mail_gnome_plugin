@@ -12,11 +12,6 @@ gnome_la_LDFLAGS = \
 	$(LIBSECRET_LIBS) \
 	$(libebook_LIBS)
 
-INCLUDES = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/gtk
-
 AM_CPPFLAGS = \
 	-Wall \
 	$(CLAWS_MAIL_CFLAGS) \
