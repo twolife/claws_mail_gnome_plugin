@@ -1,6 +1,6 @@
 AC_PREREQ(2.60)
 
-AC_INIT([gnome_plugin], [0.2.0])
+AC_INIT([gnome_plugin], [0.2.1])
 AC_CONFIG_SRCDIR([src/gnome_plugin.c])
 AM_MAINTAINER_MODE
 
@@ -26,8 +26,8 @@ if test $USE_MAINTAINER_MODE = yes; then
 fi
 
 dnl Find pkg-config
-AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-if test x$PKG_CONFIG = xno ; then
+PKG_PROG_PKG_CONFIG
+if test -z "$PKG_CONFIG" ; then
   AC_MSG_ERROR([*** pkg-config not found. See http://www.freedesktop.org/software/pkgconfig/])
 fi
 
@@ -47,7 +47,7 @@ AC_SUBST(CLAWS_MAIL_PLUGINDIR)
 dnl Check for GLib
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6 gmodule-2.0 >= 2.6 gobject-2.0 >= 2.6 gthread-2.0 >= 2.6)
 
-GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
+GLIB_GENMARSHAL=$( $PKG_CONFIG --variable=glib_genmarshal glib-2.0 )
 AC_SUBST(GLIB_GENMARSHAL)
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
